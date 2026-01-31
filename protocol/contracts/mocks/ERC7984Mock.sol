@@ -12,7 +12,7 @@ import {IERC20Metadata} from "@openzeppelin/contracts/interfaces/IERC20Metadata.
 import {ZamaEthereumConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
 
 /// @title Confidential ERC20 Wrapper Contract
-contract ConfidentialERC20Wrapper is ZamaEthereumConfig, ERC7984ERC20Wrapper {
+contract ERC7984Mock is ZamaEthereumConfig, ERC7984ERC20Wrapper {
     /// @notice Constructor to initialize the confidential ERC20 wrapper
     /// @param _assetAddress The address of the underlying ERC20 asset
     constructor(

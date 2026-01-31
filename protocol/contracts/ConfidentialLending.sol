@@ -58,12 +58,18 @@ contract ConfidentialLending is
         bytes calldata data // FIXME: Need to understand
     ) external returns (ebool) {
         // Ensure that the call is coming from the recognized ERC7984 wrapper contract
-        if (msg.sender != address(_confidentialWrapper)) return FHE.asEbool(false);
+        if (msg.sender != address(_confidentialWrapper)) {
+            ebool rejected = FHE.asEbool(false);
+            FHE.allow(rejected, msg.sender);
+            return rejected;
+        }
 
         // Increment the recipient's encrypted balance
         _mint(from, eAmount);
 
         // Return true to indicate successful receipt
-        return FHE.asEbool(true);
+        ebool accepted = FHE.asEbool(true);
+        FHE.allow(accepted, msg.sender);
+        return accepted;
     }
 }
