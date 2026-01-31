@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {FHE, ebool, euint64, externalEuint32} from "@fhevm/solidity/lib/FHE.sol";
+import {FHE, ebool, euint64, externalEuint64} from "@fhevm/solidity/lib/FHE.sol";
 import {ZamaEthereumConfig} from "@fhevm/solidity/config/ZamaConfig.sol";
 
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -73,8 +73,56 @@ contract ConfidentialLending is
     function _updateDistinctUsers(address account) internal {
         if (_userLastRound[account] < currentRound) {
             _userLastRound[account] = currentRound;
-            currentNumberOfUsers += 1;
+            ++currentNumberOfUsers;
         }
+    }
+
+    /// @notice Updates a user's balance for a specific round by applying accumulated rewards.
+    /// @dev Calculates the reward delta since the user's last update based on the user’s principal.
+    /// @param user The address of the user whose state is being updated.
+    /// @param roundId The round identifier for which the update is performed.
+
+    function _updateUserRound(address user, uint256 roundId) internal {}
+
+    // FIXME: problem reward calculation should be done before the supply/withdraw and only once
+    // FIXME: Problem: Transferable tokens, which means impact user reward calculation??
+
+    /**
+     * @notice Updates the user's reward based on the global reward index.
+     * @param account The address of the user whose reward is being updated.
+     * @dev New lending should not be rewarded in the current round.
+     * @dev Withdraw in the current round should not be rewarded in the current round.
+     */
+    function _updateUserReward(address account) internal {
+        // Lazy update on lending position
+        uint256 lastCompletedRound = currentRound - 1;
+        if (_userLastUpdatedRound[account] < lastCompletedRound) {
+            uint64 deltaIndex = _globalRewards[lastCompletedRound] - _userRewardIndex[account];
+            if (deltaIndex > 0) {
+                // Compute the reward using user contribution
+                euint64 userPrincipal = confidentialBalanceOf(account);
+                euint64 reward = FHE.div(FHE.mul(userPrincipal, deltaIndex), PRECISION_FACTOR);
+
+                // Update user reward index and mint the reward
+                _userRewardIndex[account] = _globalRewards[lastCompletedRound];
+                _mint(account, reward);
+            }
+
+            _userLastUpdatedRound[account] = lastCompletedRound;
+        }
+    }
+
+    /**
+     * @notice Override the _update function to include user reward updates on transfers
+     * @param from The address of the sender
+     * @param to The address of the recipient
+     * @param amount The encrypted amount to transfer
+     * @return transferred The encrypted amount actually transferred
+     */
+    function _update(address from, address to, euint64 amount) internal virtual override returns (euint64 transferred) {
+        _updateUserReward(from);
+        _updateUserReward(to);
+        transferred = super._update(from, to, amount);
     }
 
     /**
@@ -94,13 +142,37 @@ contract ConfidentialLending is
         // Ensure that the call is coming from the recognized ERC7984 wrapper contract
         if (msg.sender == address(_confidentialWrapper)) {
             // Increment the recipient's encrypted balance
+            _updateUserReward(from);
             _mint(from, eAmount);
             _updateDistinctUsers(from);
+
+            // Update the next round delta
+            nextRoundDelta = FHE.add(nextRoundDelta, eAmount);
+            FHE.allowThis(nextRoundDelta);
+
             success = FHE.asEbool(true);
         } else {
             success = FHE.asEbool(false);
         }
         FHE.allow(success, msg.sender);
+    }
+
+    /**
+     * @notice Request to withdraw confidential liquidity from the lending pool
+     * @param eAmount_ Encrypted amount to withdraw (external representation)
+     * @param inputProof_ Proof of correct encryption provided by the user
+     */
+    function requestWithdraw(externalEuint64 eAmount_, bytes calldata inputProof_) external {
+        euint64 eAmount = FHE.fromExternal(eAmount_, inputProof_);
+
+        // Burn the user's confidential tokens
+        _updateUserReward(msg.sender);
+        _burn(msg.sender, eAmount);
+        _updateDistinctUsers(msg.sender);
+
+        // Update the next round delta
+        nextRoundDelta = FHE.sub(nextRoundDelta, eAmount);
+        FHE.allowThis(nextRoundDelta);
     }
 
     /**
@@ -117,16 +189,7 @@ contract ConfidentialLending is
         roundDelta[currentRound] = nextRoundDelta;
 
         emit LendingRoundUpdated(currentRound, nextRoundDelta);
-
-        // Reset for next round
-        ++currentRound;
-        lastUpdateTime = block.timestamp;
-        currentNumberOfUsers = 0;
-        nextRoundDelta = FHE.asEuint64(INT64_OFFSET);
-        FHE.allowThis(nextRoundDelta);
     }
-
-    /// Also computes and updates accumulated rewards for participants.
 
     /**
      * @notice Executes the current round by performing the net operation on AAVE and updating rewards.
@@ -140,10 +203,15 @@ contract ConfidentialLending is
         cts[0] = FHE.toBytes32(nextRoundDelta);
         FHE.checkSignatures(cts, abiEncodedClearValues, decryptionProof);
 
-        // FIXME: Compute the reward of the previous round
+        // Decrypt the round amount
+        uint64 roundAmount = abi.decode(abiEncodedClearValues, (uint64));
+
+        // Compute and assigned all the rewards
+        uint256 newReward = IERC20(aAsset).balanceOf(address(this)) - totalLendedAmount;
+        uint256 deltaIndex = totalLendedAmount > 0 ? (newReward * PRECISION_FACTOR) / totalLendedAmount : 0;
+        _globalRewards[currentRound] = _globalRewards[currentRound - 1] + uint64(deltaIndex);
 
         // Apply the round
-        uint64 roundAmount = abi.decode(abiEncodedClearValues, (uint64));
         if (roundAmount < INT64_OFFSET) {
             // Withdraw from AAVE
             uint256 amountToWithdraw = INT64_OFFSET - roundAmount;
@@ -152,6 +220,8 @@ contract ConfidentialLending is
             // Wrap the withdrawn amount into confidential tokens
             IERC20(asset).approve(address(_confidentialWrapper), withdrawnAmount);
             _confidentialWrapper.wrap(address(this), withdrawnAmount);
+
+            totalLendedAmount -= withdrawnAmount;
         } else if (roundAmount > INT64_OFFSET) {
             // Supply to AAVE
             uint64 amountToLend = roundAmount - INT64_OFFSET;
@@ -160,7 +230,16 @@ contract ConfidentialLending is
             euint64 eAmount = FHE.asEuint64(amountToLend);
             FHE.allowTransient(eAmount, address(_confidentialWrapper));
             _confidentialWrapper.unwrap(address(this), address(this), eAmount);
+
+            totalLendedAmount += amountToLend;
         }
+
+        // Reset for next round
+        ++currentRound;
+        lastUpdateTime = block.timestamp;
+        currentNumberOfUsers = 0;
+        nextRoundDelta = FHE.asEuint64(INT64_OFFSET);
+        FHE.allowThis(nextRoundDelta);
     }
 
     // FIXME: Check the finalized using `unwrapRequester(unwrapAmount);`

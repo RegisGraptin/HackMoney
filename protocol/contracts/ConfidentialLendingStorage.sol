@@ -8,6 +8,9 @@ import {
 } from "@openzeppelin/confidential-contracts/contracts/token/ERC7984/extensions/ERC7984ERC20Wrapper.sol";
 
 abstract contract ConfidentialLendingStorage {
+    /// @notice Precision factor for reward computation
+    uint64 internal constant PRECISION_FACTOR = 1e8;
+
     /// @notice Offset used to simulate signed integers with uint64 (euint64)
     /// to handle lending update position.
     // value > INT64_OFFSET represent a supply action
@@ -33,6 +36,9 @@ abstract contract ConfidentialLendingStorage {
     /// @notice Current number of distinct users in the lending pool.
     uint256 public currentNumberOfUsers;
 
+    /// @notice Defined the total amount currently lended in the protocol.
+    uint256 totalLendedAmount; // TODO: Can we remove it?
+
     /// @notice Wrapper of the ERC20 underlying asset.
     ERC7984ERC20Wrapper internal _confidentialWrapper;
 
@@ -41,4 +47,13 @@ abstract contract ConfidentialLendingStorage {
 
     /// @notice Track per round the encrypted liquidity delta
     mapping(uint256 round => euint64 roundDelta) public roundDelta;
+
+    /// @notice Track the user next round balance
+    mapping(address account => uint256 lastRound) internal _userLastUpdatedRound;
+
+    /// @notice Cumulative reward index to tracks global rewards per unit of principal over time.
+    mapping(uint256 round => uint64 globalReward) internal _globalRewards;
+
+    /// @notice User reward index to compute lending reward.
+    mapping(address account => uint64 index) internal _userRewardIndex;
 }
