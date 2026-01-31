@@ -51,25 +51,28 @@ contract ConfidentialLending is
         FHE.allowThis(nextRoundDelta);
     }
 
+    /**
+     * @notice Deposit confidential liquidity into the lending pool
+     * @param operator Confidential token address. (Expected to be the wrapper)
+     * @param from User address providing the liquidity
+     * @param eAmount Encrypted amount to deposit
+     * @param data Additional data (not used)
+     * @return success indicating successful receipt
+     */
     function onConfidentialTransferReceived(
-        address operator, // FIXME: Need to understand
+        address operator,
         address from,
         euint64 eAmount,
-        bytes calldata data // FIXME: Need to understand
-    ) external returns (ebool) {
+        bytes calldata data
+    ) external returns (ebool success) {
         // Ensure that the call is coming from the recognized ERC7984 wrapper contract
-        if (msg.sender != address(_confidentialWrapper)) {
-            ebool rejected = FHE.asEbool(false);
-            FHE.allow(rejected, msg.sender);
-            return rejected;
+        if (msg.sender == address(_confidentialWrapper)) {
+            // Increment the recipient's encrypted balance
+            _mint(from, eAmount);
+            success = FHE.asEbool(true);
+        } else {
+            success = FHE.asEbool(false);
         }
-
-        // Increment the recipient's encrypted balance
-        _mint(from, eAmount);
-
-        // Return true to indicate successful receipt
-        ebool accepted = FHE.asEbool(true);
-        FHE.allow(accepted, msg.sender);
-        return accepted;
+        FHE.allow(success, msg.sender);
     }
 }
