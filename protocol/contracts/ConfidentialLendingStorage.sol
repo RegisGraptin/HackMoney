@@ -27,6 +27,18 @@ abstract contract ConfidentialLendingStorage {
     /// Scaled to INT64_OFFSET to handle supply or withdraw operation.
     euint64 public nextRoundDelta;
 
+    /// @notice Last round timestamps.
+    uint256 public lastUpdateTime;
+
+    /// @notice Current number of distinct users in the lending pool.
+    uint256 public currentNumberOfUsers;
+
     /// @notice Wrapper of the ERC20 underlying asset.
     ERC7984ERC20Wrapper internal _confidentialWrapper;
+
+    /// @notice Track the user next round balance
+    mapping(address account => uint256 lastRound) internal _userLastRound;
+
+    /// @notice Track per round the encrypted liquidity delta
+    mapping(uint256 round => euint64 roundDelta) public roundDelta;
 }

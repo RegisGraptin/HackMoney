@@ -7,6 +7,13 @@ interface IConfidentialLending {
     // TODO: Structs
     // TODO: Getters
     // TODO: Events
+
+    event LendingRoundUpdated(uint256 indexed roundId, euint64 roundDelta);
+
     // TODO: Errors
+
+    error TooEarlyForNextRound();
+    error MissingDistinctUsers();
+
     // TODO: Functions
 }
