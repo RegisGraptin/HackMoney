@@ -143,7 +143,6 @@ export function ShieldingBridge() {
               <p className="text-xs text-zinc-500">
                 {revealEncrypted ? "Decrypted" : "Encrypted • Privacy Mask Active"}
               </p>
-              {!revealEncrypted && <Badge>Encrypted</Badge>}
             </div>
           </div>
         </CardContent>
