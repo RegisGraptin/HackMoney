@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Shield } from "lucide-react";
+import { Shield, Lock, CircleDollarSign } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -18,6 +19,10 @@ import { Input } from "@/components/ui/input";
 export function ShieldingBridge() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [swapAmount, setSwapAmount] = useState("");
+  const [revealEncrypted, setRevealEncrypted] = useState(false);
+  const usdcBalance = "1,234.56";
+  const cUsdcDecrypted = "1,234.56";
+  const encryptedPlaceholder = "✶✶✶✶✶✶✶✶";
 
   const handleSwap = () => {
     if (!swapAmount) return;
@@ -89,27 +94,67 @@ export function ShieldingBridge() {
 
       <Card>
         <CardHeader>
-          <CardTitle>Zero-Knowledge Transport</CardTitle>
+          <CardTitle>Wallet Balances</CardTitle>
           <CardDescription>
-            Batch routing through encrypted relays to mask liquidity origin.
+            Public USDC vs encrypted cUSDC inside privacy vaults.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Active Relays
+            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
+              <img src="/usdc.svg" alt="USDC" className="h-5 w-5" />
+              USDC Balance
             </p>
-            <p className="mt-2 text-3xl font-semibold text-white">7</p>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-3xl font-semibold text-white">{usdcBalance}</p>
+              <Badge className="border-[#2775CA]/40 bg-[#2775CA]/10 text-[#2775CA]">USDC</Badge>
+            </div>
           </div>
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
-            <p className="text-xs uppercase tracking-[0.3em] text-zinc-500">
-              Obfuscation Layer
+
+          <div className="relative rounded-2xl border border-white/10 bg-black/40 p-4">
+            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
+              <Lock className="h-4 w-4" />
+              Encrypted cUSDC
             </p>
-            <p className="mt-2 text-sm text-zinc-300">
-              Noise entropy synced across 42 validator shards.
-            </p>
+            <div className="mt-2 flex items-center justify-between">
+              <div className="relative overflow-hidden rounded-xl">
+                <motion.p
+                  className="relative z-10 font-mono text-3xl font-semibold text-[#00FF94]"
+                  animate={{ filter: revealEncrypted ? "blur(0px)" : "blur(8px)", opacity: revealEncrypted ? 1 : 0.8 }}
+                  transition={{ duration: 0.4 }}
+                >
+                  {revealEncrypted ? cUsdcDecrypted : encryptedPlaceholder}
+                </motion.p>
+                {!revealEncrypted && (
+                  <motion.div
+                    className="absolute inset-0"
+                    animate={{ opacity: [0.24, 0.36, 0.28, 0.4, 0.3] }}
+                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
+                    style={{
+                      backgroundImage:
+                        "radial-gradient(circle at 20% 20%, rgba(0,255,148,0.08), transparent 35%), radial-gradient(circle at 80% 60%, rgba(0,255,148,0.06), transparent 45%), repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 4px)",
+                    }}
+                  />
+                )}
+              </div>
+              <Badge>cUSDC</Badge>
+            </div>
+            <div className="mt-2 flex items-center justify-between">
+              <p className="text-xs text-zinc-500">
+                {revealEncrypted ? "Decrypted" : "Encrypted • Privacy Mask Active"}
+              </p>
+              {!revealEncrypted && <Badge>Encrypted</Badge>}
+            </div>
           </div>
         </CardContent>
+        <CardFooter className="flex items-center justify-end gap-4">
+          {!revealEncrypted && (
+            <Button variant="outline" onClick={() => setRevealEncrypted(true)}>
+              <Lock className="h-4 w-4" />
+              Decrypt
+            </Button>
+          )}
+        </CardFooter>
       </Card>
     </div>
   );
