@@ -4,6 +4,7 @@ pragma solidity ^0.8.27;
 import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import {IPool} from "lib/aave-v3-origin/src/contracts/interfaces/IPool.sol";
+import {DataTypes} from "lib/aave-v3-origin/src/contracts/protocol/libraries/types/DataTypes.sol";
 
 /**
  * @title AaveAdapter
@@ -31,7 +32,8 @@ library AaveAdapter {
      * @return aToken address
      */
     function fetchAssets(address pool, address underlying) public view returns (address) {
-        return IPool(pool).getReserveAToken(underlying);
+        DataTypes.ReserveDataLegacy memory reserve = IPool(pool).getReserveData(underlying);
+        return reserve.aTokenAddress;
     }
 
     /**

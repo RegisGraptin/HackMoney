@@ -9,7 +9,7 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const AAVE_POOL_ADDRESS = "0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951";
 
   // Get the deployed USDC Wrapper address
-  const usdcWrapper = await hre.deployments.get("USDCWrapper");
+  const usdcWrapper = await hre.deployments.get("ERC7984Mock");
   const WRAPPER_ADDRESS = usdcWrapper.address;
 
   // Deploy AaveAdapter library first
@@ -32,4 +32,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 export default func;
 func.id = "deploy_confidential_lending"; // id required to prevent reexecution
 func.tags = ["ConfidentialLending"];
-func.dependencies = ["USDCWrapper"]; // Ensure USDCWrapper is deployed first
+func.dependencies = ["ERC7984Mock"]; // Ensure ERC7984Mock is deployed first

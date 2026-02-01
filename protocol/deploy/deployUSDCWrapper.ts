@@ -18,4 +18,4 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
 };
 export default func;
 func.id = "deploy_usdc_wrapper"; // id required to prevent reexecution
-func.tags = ["USDCWrapper"];
+func.tags = ["ERC7984Mock"];

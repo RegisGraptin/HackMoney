@@ -39,6 +39,10 @@ npx hardhat deploy --tags ConfidentialLending --network sepolia
 npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
 ```
 
+## Deployed Contracts on Sepolia
+
+- cUSDC: `0x022521db54b0BfC74d8F76a8838a63494DD00d01`
+
 ## 📜 Available Scripts
 
 | Script             | Description              |
@@ -58,3 +62,7 @@ Pool address: `0x6Ae43d3271ff6888e7Fc43Fd7321a503ff738951`
 https://sepolia.etherscan.io/address/0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8
 
 USDC address: `0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8`
+
+Faucet for USDC: https://gho.aave.com/faucet/
+
+Confidential Lending Protocol: `0x4c6faABbDD81B1c8A8d6204BA3A511467e081205`
