@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { cookies } from "next/headers";
 import "./globals.css";
+
+import { WalletProvider } from "@/components/wallet/WalletProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -17,17 +20,22 @@ export const metadata: Metadata = {
   description: "Cyber-noir privacy tooling for FHE-wrapped assets and lending.",
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const cookieStore = await cookies();
+  const cookieValue = cookieStore.toString();
+
   return (
     <html lang="en">
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        {children}
+        <WalletProvider cookies={cookieValue}>
+          {children}
+        </WalletProvider>
       </body>
     </html>
   );

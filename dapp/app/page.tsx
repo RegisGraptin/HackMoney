@@ -99,11 +99,11 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <Badge>Native Web3</Badge>
-            <Button className="shadow-[0_0_25px_rgba(0,255,148,0.35)]">
+            {/* <Button className="shadow-[0_0_25px_rgba(0,255,148,0.35)]">
               <Zap className="h-4 w-4" />
               Connect Wallet
-            </Button>
+            </Button> */}
+            <appkit-button />
           </div>
         </header>
 
