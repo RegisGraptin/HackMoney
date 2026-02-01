@@ -58,4 +58,8 @@ abstract contract ConfidentialLendingStorage {
     mapping(address account => uint64 index) internal _userRewardIndex;
 
     mapping(address account => mapping(uint256 roundIndex => euint64 eAmount)) public eAmountToWithdraw;
+
+    mapping(uint256 round => euint64 unwrapAmount) internal _unwrapRequests;
+
+    mapping(uint256 round => uint64 position) public positions;
 }

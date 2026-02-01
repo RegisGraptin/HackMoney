@@ -232,6 +232,9 @@ contract ConfidentialLending is
         uint256 deltaIndex = totalLendedAmount > 0 ? (newReward * PRECISION_FACTOR) / totalLendedAmount : 0;
         _globalRewards[currentRound] = _globalRewards[currentRound - 1] + uint64(deltaIndex);
 
+        // Save the current position
+        positions[currentRound] = roundAmount;
+
         // Apply the round
         if (roundAmount < INT64_OFFSET) {
             // Withdraw from AAVE
@@ -244,17 +247,17 @@ contract ConfidentialLending is
 
             totalLendedAmount -= withdrawnAmount;
         } else if (roundAmount > INT64_OFFSET) {
-            // FIXME: Supply not possible yet
-
-            // Supply to AAVE
+            // Unwrap the requested amount to supply it later on AAVE
             uint64 amountToLend = roundAmount - INT64_OFFSET;
-            AaveAdapter.supplyToAave(asset, AAVE_POOL_ADDRESS, amountToLend);
 
             euint64 eAmount = FHE.asEuint64(amountToLend);
             FHE.allowTransient(eAmount, address(_confidentialWrapper));
             _confidentialWrapper.unwrap(address(this), address(this), eAmount);
 
             totalLendedAmount += amountToLend;
+
+            // Store the unwrap request to finalize later
+            _unwrapRequests[currentRound] = eAmount;
         }
 
         // Reset for next round
@@ -265,6 +268,18 @@ contract ConfidentialLending is
         FHE.allowThis(nextRoundDelta);
     }
 
-    // FIXME: Check the finalized using `unwrapRequester(unwrapAmount);`
-    // NOTE: anyone can call the finalizeUnwrap BUT we need to ensure it is done before the user call to finalize the withdraw
+    /**
+     * @notice Finalizes the supply operation for a specific round after unwrapping is complete.
+     * @param roundIndex The index of the round to finalize
+     */
+    function finalizeSupply(uint256 roundIndex) external {
+        require(FHE.isInitialized(_unwrapRequests[roundIndex]), UndefinedUnwrapRequest());
+        require(
+            _confidentialWrapper.unwrapRequester(_unwrapRequests[roundIndex]) != address(0),
+            UnfinalizedUnwrapRequest()
+        );
+        _unwrapRequests[roundIndex] = euint64.wrap(0);
+
+        AaveAdapter.supplyToAave(asset, AAVE_POOL_ADDRESS, positions[roundIndex] - INT64_OFFSET);
+    }
 }
