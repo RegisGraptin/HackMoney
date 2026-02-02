@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Shield, Lock, CircleDollarSign } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -15,29 +15,75 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { useAccount, usePublicClient, useWriteContract } from "wagmi";
-import { parseUnits, erc20Abi, Address } from "viem";
+import { useConnection, usePublicClient, useWriteContract } from "wagmi";
+import { parseUnits, erc20Abi } from "viem";
 import { PROTOCOL } from "@/lib/protocol";
 import { useUSDCBalance } from "@/lib/hooks/useTokenBalance";
-import { useFhevm } from "@/lib/fhevm-sdk/react";
+import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
+import { useFHEDecrypt, useFhevm } from "@/lib/fhevm-sdk/react";
+import { ethers } from "ethers";
+import { formatUnits } from "viem";
+import { formatAmount } from "@/lib/utils";
+import { GenericStringInMemoryStorage } from "@/lib/fhevm-sdk/storage/GenericStringStorage";
 
 export function ShieldingBridge() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [swapAmount, setSwapAmount] = useState("");
   const [revealEncrypted, setRevealEncrypted] = useState(false);
-  const { address: userAddress } = useAccount();
+  const { address: userAddress } = useConnection();
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
-  const cUsdcDecrypted = "1,234.56";
+  const [cUsdcDecrypted, setCUsdcDecrypted] = useState<string>("");
   const encryptedPlaceholder = "✶✶✶✶✶✶✶✶";
   
   const { formattedAmount: usdcFormattedAmount } = useUSDCBalance(userAddress);
+  const { data: cUsdcEncrypted, refetch: refetchConfidentialBalance } = useConfidentialBalance(userAddress as any);
 
-  const { instance: fhevm, status: fheStatus } = useFhevm({
+  const { instance: fhevm, status: fheStatus, error } = useFhevm({
     provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
     chainId: PROTOCOL.chainId,
-    enabled: true,
   });
+
+  const [signer, setSigner] = useState<ethers.JsonRpcSigner | undefined>(undefined);
+  const storage = new GenericStringInMemoryStorage();
+
+  // Initialize ethers signer from the injected provider
+  if (typeof window !== "undefined" && !signer && (window as any).ethereum) {
+    const provider = new ethers.BrowserProvider((window as any).ethereum);
+    provider.getSigner().then(setSigner).catch(() => {});
+  }
+
+  const requests = cUsdcEncrypted
+    ? [{ handle: cUsdcEncrypted as string, contractAddress: PROTOCOL.address.cUSDC }]
+    : [];
+
+  const { decrypt, isDecrypting, results } = useFHEDecrypt({
+    instance: fhevm,
+    ethersSigner: signer,
+    fhevmDecryptionSignatureStorage: storage,
+    chainId: PROTOCOL.chainId,
+    requests,
+  });
+
+  const handleDecrypt = async () => {
+    decrypt();
+  };
+
+  useEffect(() => {
+    if (!cUsdcEncrypted) return;
+    const raw = (results as Record<string, unknown>)[cUsdcEncrypted as string];
+    if (raw !== undefined) {
+      if (typeof raw === "bigint") {
+        const base = formatUnits(raw, PROTOCOL.decimals.cUSDC);
+        setCUsdcDecrypted(formatAmount(base));
+      } else if (typeof raw === "string") {
+        setCUsdcDecrypted(raw);
+      } else if (raw !== null) {
+        setCUsdcDecrypted(String(raw));
+      }
+      setRevealEncrypted(true);
+    }
+  }, [results, cUsdcEncrypted]);
 
 
   const handleShield = async () => {
@@ -64,6 +110,13 @@ export function ShieldingBridge() {
         args: [userAddress, amount]
       });
       await publicClient!.waitForTransactionReceipt({ hash: wrapHash });
+
+      // Refresh encrypted cUSDC balance and reset decrypted view
+      if (refetchConfidentialBalance) {
+        await refetchConfidentialBalance();
+      }
+      setRevealEncrypted(false);
+      setCUsdcDecrypted("");
 
       setSwapAmount("");
     } catch (err) {
@@ -124,8 +177,7 @@ export function ShieldingBridge() {
             </div>
           </div>
         </CardContent>
-        <CardFooter className="flex items-center justify-between gap-4">
-          <Button variant="outline">View Bridge Params</Button>
+        <CardFooter className="flex items-center justify-end">
           <Button onClick={handleShield} disabled={!swapAmount || !userAddress || privacyLoading}>
             {privacyLoading ? "Shielding..." : "Shield"}
           </Button>
@@ -188,9 +240,9 @@ export function ShieldingBridge() {
         </CardContent>
         <CardFooter className="flex items-center justify-end gap-4">
           {!revealEncrypted && (
-            <Button variant="outline" onClick={() => setRevealEncrypted(true)}>
+            <Button variant="outline" onClick={handleDecrypt} disabled={isDecrypting || !cUsdcEncrypted || fheStatus !== "ready"}>
               <Lock className="h-4 w-4" />
-              Decrypt
+              {isDecrypting ? "Decrypting..." : "Decrypt"}
             </Button>
           )}
         </CardFooter>

@@ -1,5 +1,5 @@
 import { CHAIN, contracts } from "./contracts";
-import cUSDC from "./abis/ERC7984Mock.json";
+import cUSDC from "./abis/ERC7984Mock.json" assert { type: "json" };
 
 export const PROTOCOL = {
   chainId: CHAIN.sepolia,
@@ -10,7 +10,7 @@ export const PROTOCOL = {
     AAVEPool: contracts.AAVEPool[CHAIN.sepolia] as `0x${string}`
   },
   abi: {
-    cUSDC: cUSDC.abi as const,
+    cUSDC: cUSDC.abi,
   },
   decimals: {
     USDC: 6,
