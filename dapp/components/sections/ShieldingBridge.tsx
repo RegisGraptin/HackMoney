@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
-import { Shield, Lock, CircleDollarSign, CheckCircle, Loader2 } from "lucide-react";
+import { Shield, CircleDollarSign, CheckCircle, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 import { Button } from "@/components/ui/button";
@@ -25,68 +25,28 @@ import { ethers } from "ethers";
 import { formatUnits } from "viem";
 import { formatAmount } from "@/lib/utils";
 import { GenericStringInMemoryStorage } from "@/lib/fhevm-sdk/storage/GenericStringStorage";
+import { Balance } from "./Balance";
 
 export function ShieldingBridge() {
   const [privacyLoading, setPrivacyLoading] = useState(false);
   const [swapAmountRaw, setSwapAmountRaw] = useState("");
   const amountInputRef = useRef<HTMLInputElement | null>(null);
-  const [revealEncrypted, setRevealEncrypted] = useState(false);
   const [shieldStage, setShieldStage] = useState<"idle" | "approving" | "wrapping" | "done">("idle");
   const { address: userAddress } = useConnection();
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
-  const [cUsdcDecrypted, setCUsdcDecrypted] = useState<string>("");
-  const encryptedPlaceholder = "✶✶✶✶✶✶✶✶";
   
-  const { formattedAmount: usdcFormattedAmount, data: usdcRaw } = useUSDCBalance(userAddress);
-  const { data: cUsdcEncrypted, refetch: refetchConfidentialBalance } = useConfidentialBalance(userAddress as any);
+  const { data: usdcRaw } = useUSDCBalance(userAddress);
+  const { refetch: refetchConfidentialBalance } = useConfidentialBalance(PROTOCOL.address.cUSDC, userAddress as any);
 
-  const { instance: fhevm, status: fheStatus, error } = useFhevm({
-    provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
-    chainId: PROTOCOL.chainId,
-  });
 
   const [signer, setSigner] = useState<ethers.JsonRpcSigner | undefined>(undefined);
-  const storage = new GenericStringInMemoryStorage();
 
   // Initialize ethers signer from the injected provider
   if (typeof window !== "undefined" && !signer && (window as any).ethereum) {
     const provider = new ethers.BrowserProvider((window as any).ethereum);
     provider.getSigner().then(setSigner).catch(() => {});
   }
-
-  const requests = cUsdcEncrypted
-    ? [{ handle: cUsdcEncrypted as string, contractAddress: PROTOCOL.address.cUSDC }]
-    : [];
-
-  const { decrypt, isDecrypting, results } = useFHEDecrypt({
-    instance: fhevm,
-    ethersSigner: signer,
-    fhevmDecryptionSignatureStorage: storage,
-    chainId: PROTOCOL.chainId,
-    requests,
-  });
-
-  const handleDecrypt = async () => {
-    decrypt();
-  };
-
-  useEffect(() => {
-    if (!cUsdcEncrypted) return;
-    const raw = (results as Record<string, unknown>)[cUsdcEncrypted as string];
-    if (raw !== undefined) {
-      if (typeof raw === "bigint") {
-        const base = formatUnits(raw, PROTOCOL.decimals.cUSDC);
-        setCUsdcDecrypted(formatAmount(base));
-      } else if (typeof raw === "string") {
-        setCUsdcDecrypted(raw);
-      } else if (raw !== null) {
-        setCUsdcDecrypted(String(raw));
-      }
-      setRevealEncrypted(true);
-    }
-  }, [results, cUsdcEncrypted]);
-
 
   const handleShield = async () => {
     try {
@@ -96,16 +56,26 @@ export function ShieldingBridge() {
       if (!amountStr || Number(amountStr) <= 0) return;
 
       setPrivacyLoading(true);
-      setShieldStage("approving");
       const amount = parseUnits(amountStr, PROTOCOL.decimals.USDC);
-
-      const approveHash = await mutateAsync({
+      
+      // Check existing allowance; skip approval if sufficient
+      const allowance = await publicClient!.readContract({
         address: PROTOCOL.address.USDC,
         abi: erc20Abi,
-        functionName: "approve",
-        args: [PROTOCOL.address.cUSDC, amount]
-      });
-      await publicClient!.waitForTransactionReceipt({ hash: approveHash });
+        functionName: "allowance",
+        args: [userAddress as any, PROTOCOL.address.cUSDC]
+      }) as bigint;
+
+      if (allowance < amount) {
+        setShieldStage("approving");
+        const approveHash = await mutateAsync({
+          address: PROTOCOL.address.USDC,
+          abi: erc20Abi,
+          functionName: "approve",
+          args: [PROTOCOL.address.cUSDC, amount]
+        });
+        await publicClient!.waitForTransactionReceipt({ hash: approveHash });
+      }
 
       setShieldStage("wrapping");
       const wrapHash = await mutateAsync({
@@ -116,12 +86,10 @@ export function ShieldingBridge() {
       });
       await publicClient!.waitForTransactionReceipt({ hash: wrapHash });
 
-      // Refresh encrypted cUSDC balance and reset decrypted view
-      await refetchConfidentialBalance();
-      setRevealEncrypted(false);
-      setCUsdcDecrypted("");
-      setShieldStage("done");
+      // Refresh encrypted cUSDC balance
+      refetchConfidentialBalance();
 
+      setShieldStage("done");
       setSwapAmountRaw("");
     } catch (err) {
       console.error("Shield failed:", err);
@@ -217,7 +185,7 @@ export function ShieldingBridge() {
             <div className="mt-3 space-y-2">
               {[
                 { key: "approving", label: "Approve USDC", icon: <CircleDollarSign className="h-4 w-4" /> },
-                { key: "wrapping", label: "Wrap to cUSDC", icon: <Shield className="h-4 w-4" /> },
+                { key: "wrapping", label: "Shield to cUSDC", icon: <Shield className="h-4 w-4" /> },
               ].map((step) => {
                 const currentOrder = { idle: -1, approving: 0, wrapping: 1, done: 2 } as const;
                 const statusOrder = currentOrder[shieldStage];
@@ -252,69 +220,7 @@ export function ShieldingBridge() {
         </CardFooter>
       </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Balances</CardTitle>
-          <CardDescription>
-            Public USDC vs encrypted cUSDC inside privacy vaults.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="rounded-2xl border border-white/10 bg-black/40 p-4">
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
-              <img src="/usdc.svg" alt="USDC" className="h-5 w-5" />
-              USDC Balance
-            </p>
-            <div className="mt-2 flex items-center justify-between">
-              <p className="text-3xl font-mono font-semibold text-white">{usdcFormattedAmount || "0.0"}</p>
-              <Badge className="border-[#2775CA]/40 bg-[#2775CA]/10 text-[#2775CA]">USDC</Badge>
-            </div>
-          </div>
-
-          <div className="relative rounded-2xl border border-white/10 bg-black/40 p-4">
-            <p className="flex items-center gap-2 text-xs uppercase tracking-[0.3em] text-zinc-500">
-              <Lock className="h-4 w-4" />
-              Encrypted cUSDC
-            </p>
-            <div className="mt-2 flex items-center justify-between">
-              <div className="relative overflow-hidden rounded-xl">
-                <motion.p
-                  className="relative z-10 font-mono text-3xl font-semibold text-[#00FF94]"
-                  animate={{ filter: revealEncrypted ? "blur(0px)" : "blur(8px)", opacity: revealEncrypted ? 1 : 0.8 }}
-                  transition={{ duration: 0.4 }}
-                >
-                  {revealEncrypted ? cUsdcDecrypted : encryptedPlaceholder}
-                </motion.p>
-                {!revealEncrypted && (
-                  <motion.div
-                    className="absolute inset-0"
-                    animate={{ opacity: [0.24, 0.36, 0.28, 0.4, 0.3] }}
-                    transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
-                    style={{
-                      backgroundImage:
-                        "radial-gradient(circle at 20% 20%, rgba(0,255,148,0.08), transparent 35%), radial-gradient(circle at 80% 60%, rgba(0,255,148,0.06), transparent 45%), repeating-linear-gradient(135deg, rgba(255,255,255,0.04) 0px, rgba(255,255,255,0.04) 2px, transparent 2px, transparent 4px)",
-                    }}
-                  />
-                )}
-              </div>
-              <Badge>cUSDC</Badge>
-            </div>
-            <div className="mt-2 flex items-center justify-between">
-              <p className="text-xs text-zinc-500">
-                {revealEncrypted ? "Decrypted" : "Encrypted • Privacy Mask Active"}
-              </p>
-            </div>
-          </div>
-        </CardContent>
-        <CardFooter className="flex items-center justify-end gap-4">
-          {!revealEncrypted && (
-            <Button variant="outline" onClick={handleDecrypt} disabled={isDecrypting || !cUsdcEncrypted || fheStatus !== "ready"}>
-              <Lock className="h-4 w-4" />
-              {isDecrypting ? "Revealing..." : "Reveal Balance"}
-            </Button>
-          )}
-        </CardFooter>
-      </Card>
+      <Balance />
     </div>
   );
 }

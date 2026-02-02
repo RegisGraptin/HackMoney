@@ -2,9 +2,12 @@ import { Address } from "viem";
 import { useReadContract } from "wagmi";
 import { PROTOCOL } from "../protocol";
 
-export function useConfidentialBalance(userAddress: Address | undefined) {
+export function useConfidentialBalance(
+  contractAddress: Address,
+  userAddress: Address | undefined
+) {
   return useReadContract({
-    address: PROTOCOL.address.cUSDC,
+    address: contractAddress,
     abi: PROTOCOL.abi.cUSDC,
     functionName: "confidentialBalanceOf",
     args: [userAddress!],
