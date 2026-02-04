@@ -7,7 +7,7 @@
   <p align="center">
     The confidential lending layer that lets users lend to Aave without exposing their positions on-chain.
     <br />
-    <span align="center" style="font-style: italic; font-size: 0.9em;">Built during <a href="https://ethglobal.com/events/hackmoney2026" title="HackMoney 2026">HackMoney 2026</a></span>
+    <em align="center">Built during <a href="https://ethglobal.com/events/hackmoney2026" title="HackMoney 2026">HackMoney 2026</a></em>
     <br />
     <br />
     <a href="https://github.com/RegisGraptin/CipherLend">Code</a>
