@@ -8,10 +8,10 @@ import { Button } from "@/components/ui/button";
 import { useConnection, usePublicClient, useWriteContract } from "wagmi";
 import { parseUnits } from "viem";
 import { PROTOCOL } from "@/lib/protocol";
-import { useFhevm } from "@/lib/fhevm-sdk/react";
 import { useFHEEncryption, toHex } from "@/lib/fhevm-sdk/react/useFHEEncryption";
-import { ethers } from "ethers";
 import { useConfidentialBalance } from "@/lib/hooks/useConfidentialBalance";
+import { useConnectedSigner } from "@/lib/utils/useConnectedSigner";
+import { useConnectedFhevm } from "@/lib/utils/fhevm";
 
 type Stage = "idle" | "submitting" | "done";
 
@@ -29,15 +29,8 @@ export function LendingSupply() {
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
 
-  const { instance: fhevm } = useFhevm({
-    provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
-    chainId: PROTOCOL.chainId,
-  });
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | undefined>(undefined);
-  if (typeof window !== "undefined" && !signer && (window as any).ethereum) {
-    const provider = new ethers.BrowserProvider((window as any).ethereum);
-    provider.getSigner().then(setSigner).catch(() => {});
-  }
+  const { instance: fhevm } = useConnectedFhevm();
+  const { signer } = useConnectedSigner();
 
   const encCUSDCToken = useFHEEncryption({
     instance: fhevm,

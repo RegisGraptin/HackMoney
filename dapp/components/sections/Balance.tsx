@@ -22,6 +22,8 @@ import { ethers } from "ethers";
 import { formatUnits } from "viem";
 import { formatAmount } from "@/lib/utils";
 import { GenericStringInMemoryStorage } from "@/lib/fhevm-sdk/storage/GenericStringStorage";
+import { useConnectedFhevm } from "@/lib/utils/fhevm";
+import { useConnectedSigner } from "@/lib/utils/useConnectedSigner";
 
 export function Balance() {
   const { address: userAddress } = useConnection();
@@ -29,12 +31,9 @@ export function Balance() {
   const { data: cUsdcEncrypted } = useConfidentialBalance(PROTOCOL.address.cUSDC, userAddress as any);
   const { data: lcUsdcEncrypted } = useConfidentialBalance(PROTOCOL.address.ConfidentialLending, userAddress as any);
 
-  const { instance: fhevm, status: fheStatus } = useFhevm({
-    provider: typeof window !== "undefined" ? (window as any).ethereum : undefined,
-    chainId: PROTOCOL.chainId,
-  });
+  const { instance: fhevm, status: fheStatus } = useConnectedFhevm();
+  const { signer } = useConnectedSigner();
 
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | undefined>(undefined);
   const storage = new GenericStringInMemoryStorage();
   const [cUsdcBig, setCUsdcBig] = useState<bigint | undefined>(undefined);
   const [revealEncrypted, setRevealEncrypted] = useState(false);
@@ -44,11 +43,6 @@ export function Balance() {
   const [revealLending, setRevealLending] = useState(false);
   const [lastCHandle, setLastCHandle] = useState<string | undefined>(undefined);
   const [lastLHandle, setLastLHandle] = useState<string | undefined>(undefined);
-
-  if (typeof window !== "undefined" && !signer && (window as any).ethereum) {
-    const provider = new ethers.BrowserProvider((window as any).ethereum);
-    provider.getSigner().then(setSigner).catch(() => {});
-  }
 
   const requests = [
     ...(cUsdcEncrypted

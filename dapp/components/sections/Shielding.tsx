@@ -37,15 +37,6 @@ export function Shielding() {
   const { data: usdcRaw } = useBalance(PROTOCOL.address.USDC, userAddress);
   const { refetch: refetchConfidentialBalance } = useConfidentialBalance(PROTOCOL.address.cUSDC, userAddress as any);
 
-
-  const [signer, setSigner] = useState<ethers.JsonRpcSigner | undefined>(undefined);
-
-  // Initialize ethers signer from the injected provider
-  if (typeof window !== "undefined" && !signer && (window as any).ethereum) {
-    const provider = new ethers.BrowserProvider((window as any).ethereum);
-    provider.getSigner().then(setSigner).catch(() => {});
-  }
-
   const handleShield = async () => {
     try {
       if (!userAddress) return;
