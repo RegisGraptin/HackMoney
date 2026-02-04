@@ -66,3 +66,39 @@ USDC address: `0x94a9D9AC8a22534E3FaCa9F4e7F2E2cf85d5E4C8`
 Faucet for USDC: https://gho.aave.com/faucet/
 
 Confidential Lending Protocol: `0x4c6faABbDD81B1c8A8d6204BA3A511467e081205`
+
+## Hardhat Tasks (Sepolia)
+
+- Prerequisites: set environment variables in `.env`:
+  - `RPC_URL_SEPOLIA`: Sepolia RPC URL
+  - `ACCOUNT_1_PRIVATE_KEY`: primary signer (funds, wrap, supply)
+  - `ACCOUNT_2_PRIVATE_KEY`: secondary signer (receiver for funding)
+
+### Fund ETH and transfer USDC
+
+- Sends a small amount of ETH and transfers USDC from `ACCOUNT_1` to `ACCOUNT_2`.
+
+```bash
+npx hardhat --network sepolia task:fund-eth-usdc
+```
+
+### Shield USDC (wrap to confidential cUSDC)
+
+- Approves USDC to the wrapper and mints cUSDC to the target address.
+
+```bash
+npx hardhat --network sepolia task:shield-usdc
+```
+
+### Supply liquidity via ConfidentialLending - Lending
+
+- Encrypts the amount and sends cUSDC using `confidentialTransferAndCall` to `ConfidentialLending`.
+
+```bash
+npx hardhat --network sepolia task:lend
+```
+
+Notes:
+
+- Ensure deployments exist on Sepolia (wrapper `ERC7984Mock` and `ConfidentialLending`).
+- You must hold enough USDC (for wrap) and cUSDC (if directly supplying without wrapping here first).

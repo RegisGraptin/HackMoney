@@ -10,6 +10,10 @@ import type { HardhatUserConfig } from "hardhat/config";
 import "solidity-coverage";
 import "dotenv/config";
 
+// Load Hardhat tasks
+import "./tasks/fund";
+import "./tasks/lending";
+
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",
   namedAccounts: {
