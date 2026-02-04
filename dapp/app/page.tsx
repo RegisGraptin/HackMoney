@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shielding } from "@/components/sections/Shielding";
 import { LendingDeck } from "@/components/sections/LendingDeck";
 import { ProtocolStatus } from "@/components/sections/ProtocolStatus";
+import { ConnectButton } from "@/components/wallet/ConnectButton";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState("shield");
@@ -29,11 +30,7 @@ export default function Home() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* <Button className="shadow-[0_0_25px_rgba(0,255,148,0.35)]">
-              <Zap className="h-4 w-4" />
-              Connect Wallet
-            </Button> */}
-            <appkit-button size="md" label="Connect" />
+            <ConnectButton />
           </div>
         </header>
 
