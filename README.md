@@ -1,33 +1,38 @@
-# HackMoney
+<a id="readme-top"></a>
 
-EtherVault: Confidential Batch-Lending via FHE
+<br />
+<div align="center">
+  <a href="">
+    <img src="" alt="Logo" width="250" height="250">
+  </a>
 
-EtherVault is a privacy-first lending interface built on Ethereum (currently live on Sepolia). It allows users to interact with blue-chip DeFi protocols like Aave without revealing their individual financial strategies, transaction sizes, or timing.
+<h3 align="center">Cipher Lend</h3>
+  <p align="center">
+    Lend Confidentialy on AAVE using FHE
+    <br />
+    <br />
+    <a href="#">Code</a>
+    &middot;
+    <a href="#">Website</a>
+    &middot;
+    <a href="#">Video Demo</a>
+  </p>
+</div>
 
-By leveraging Fully Homomorphic Encryption (FHE), EtherVault enables a "dark pool" environment for liquidity provision, ensuring that while the protocol remains fully transparent and auditable, the individual's actions remain entirely private.
-The Vision: Privacy Through Aggregate Computation
+## About Cipher Lend
 
-In standard DeFi, every deposit or withdrawal is public. This allows observers to track portfolios, front-run large moves, and deanonymize users. EtherVault breaks this link by decoupling the user's intent from the final blockchain transaction.
-How It Works: The "Round-Based" Architecture
+Cipher Lend lets you lend to Aave **without exposing your position on-chain**.
 
-Unlike traditional platforms that execute trades instantly, EtherVault operates in Discrete Rounds.
+Normally, every Aave deposit or withdrawal publicly reveals who acted, how much, and when. Cipher Lend breaks this link by batching many users’ actions together and executing them in a single transaction, making individual activity indistinguishable.
 
-    Encrypted Submission: Users submit their desired actions (Supply or Withdraw) as encrypted payloads. Thanks to FHE, the protocol can perform math on this data (e.g., adding up total deposits) without ever "seeing" the underlying numbers.
+Cipher Lend operates using a round-based execution model. During each round, users submit encrypted intents to lend or withdraw. Once a predefined time window closes and a participation threshold is reached, the protocol executes a single aggregated transaction on Aave, supplying or withdrawing only the net amount. Because only the aggregate value is visible on-chain, individual user positions and amounts remain private.
 
-    Confidential Aggregation: During the round, the system calculates the net movement of funds across all participants while the data is still encrypted.
+Cipher Lend does not reinvent lending infrastructure. Instead, it provides the privacy primitives required to interact with battle-tested DeFi protocols while leveraging Fully Homomorphic Encryption (FHE) for confidential computation.
 
-    Single-Tx Execution: At the close of a round, the protocol executes a single, consolidated transaction on Aave (e.g., "Deposit 500 ETH").
+Welcome to the privacy land.
 
-    Privacy Shield: Because only the aggregate total is visible on-chain, it is impossible for outside observers to determine which portion of that 500 ETH belonged to you, or if you were even participating in that specific round.
+## Getting Started
 
-Key Features
+TODO:
 
-    Total Obfuscation: Your individual liquidity positions are shielded from public block explorers.
-
-    MEV Resistance: By batching operations and encrypting intent, the platform eliminates the ability for searchers to front-run individual users.
-
-    Aave Integration: Tap into the deep liquidity and proven security of Aave while adding a sophisticated layer of institutional-grade privacy.
-
-    Seamless Experience: Despite the complex cryptography under the hood, the user experience mimics a standard lending vault, requiring no specialized knowledge of FHE.
-
-    Note: This project is currently in its alpha phase on the Sepolia Testnet, serving as a proof-of-concept for the future of private, scalable DeFi interactions.
+Sepolia environment 
