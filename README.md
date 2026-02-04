@@ -5,10 +5,11 @@
   <a href="">
     <img src="./logo.png" alt="Logo" width="250" height="250">
   </a>
-
-<h3 align="center">Cipher Lend</h3>
+  <h3 align="center">Cipher Lend</h3>
   <p align="center">
-    Lend Confidentialy on AAVE using FHE
+    The confidential lending layer that lets users lend to Aave without exposing their positions on-chain.
+    <br />
+    <span align="center" style="font-style: italic; font-size: 0.9em;">Built during <a href="https://ethglobal.com/events/hackmoney2026" title="HackMoney 2026">HackMoney 2026</a></span>
     <br />
     <br />
     <a href="#">Code</a>
@@ -35,4 +36,4 @@ Welcome to the privacy land.
 
 TODO:
 
-Sepolia environment 
+Sepolia environment
