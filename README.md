@@ -2,9 +2,7 @@
 
 <br />
 <div align="center">
-  <a href="">
-    <img src="./logo.png" alt="Logo" width="250" height="250">
-  </a>
+  <img src="./logo.png" alt="Logo" width="250" height="250">
   <h3 align="center">Cipher Lend</h3>
   <p align="center">
     The confidential lending layer that lets users lend to Aave without exposing their positions on-chain.
@@ -12,7 +10,7 @@
     <span align="center" style="font-style: italic; font-size: 0.9em;">Built during <a href="https://ethglobal.com/events/hackmoney2026" title="HackMoney 2026">HackMoney 2026</a></span>
     <br />
     <br />
-    <a href="#">Code</a>
+    <a href="https://github.com/RegisGraptin/CipherLend">Code</a>
     &middot;
     <a href="#">Website</a>
     &middot;
