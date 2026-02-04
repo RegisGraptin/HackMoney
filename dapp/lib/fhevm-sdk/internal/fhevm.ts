@@ -8,6 +8,7 @@ import type {
 import { isFhevmWindowType, RelayerSDKLoader } from "./RelayerSDKLoader";
 import { publicKeyStorageGet, publicKeyStorageSet } from "./PublicKeyStorage";
 import { FhevmInstance, FhevmInstanceConfig } from "../fhevmTypes";
+import { FhevmPublicKeyType } from "@zama-fhe/relayer-sdk/web";
 
 export class FhevmReactError extends Error {
   code: string;
@@ -267,7 +268,7 @@ export const createFhevmInstance = async (parameters: {
     ...relayerSDK.SepoliaConfig,
     network: providerOrUrl,
     publicKey: pub.publicKey,
-    publicParams: pub.publicParams,
+    publicParams: pub.publicParams ? pub.publicParams : undefined,
   };
 
   // notify that state === "creating"

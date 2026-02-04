@@ -1,3 +1,4 @@
+import { FhevmPkeCrsByCapacityType, FhevmPublicKeyType } from "@zama-fhe/relayer-sdk/web";
 import { openDB, DBSchema, IDBPDatabase } from "idb";
 
 type FhevmStoredPublicKey = {
@@ -49,18 +50,6 @@ async function _getDB(): Promise<IDBPDatabase<PublicParamsDB> | undefined> {
   return __dbPromise;
 }
 
-type FhevmInstanceConfigPublicKey = {
-  data: Uint8Array | null;
-  id: string | null;
-};
-
-type FhevmInstanceConfigPublicParams = {
-  "2048": {
-    publicParamsId: string;
-    publicParams: Uint8Array;
-  };
-};
-
 function assertFhevmStoredPublicKey(
   value: unknown
 ): asserts value is FhevmStoredPublicKey | null {
@@ -110,8 +99,8 @@ function assertFhevmStoredPublicParams(
 }
 
 export async function publicKeyStorageGet(aclAddress: `0x${string}`): Promise<{
-  publicKey?: FhevmInstanceConfigPublicKey;
-  publicParams: FhevmInstanceConfigPublicParams | null;
+  publicKey?: FhevmPublicKeyType;
+  publicParams: FhevmPkeCrsByCapacityType | null;
 }> {
   const db = await _getDB();
   if (!db) {
@@ -148,7 +137,7 @@ export async function publicKeyStorageGet(aclAddress: `0x${string}`): Promise<{
       }
     : null;
 
-  let publicKey: FhevmInstanceConfigPublicKey | undefined = undefined;
+  let publicKey: FhevmPublicKeyType | undefined = undefined;
 
   if (publicKeyId && publicKeyData) {
     publicKey = {
