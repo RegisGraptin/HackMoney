@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Shield } from "lucide-react";
+import Image from "next/image";
 
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shielding } from "@/components/sections/Shielding";
@@ -18,8 +18,8 @@ export default function Home() {
       <div className="relative mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-10 px-6 py-10">
         <header className="flex flex-wrap items-center justify-between gap-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl border border-[#00FF94]/30 bg-[#00FF94]/10">
-              <Shield className="h-5 w-5 text-[#00FF94]" />
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#00FF94]/20">
+              <Image src="/logo.png" alt="Cipher Lend logo" width={36} height={36} />
             </div>
             <div>
               <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">
@@ -33,7 +33,7 @@ export default function Home() {
               <Zap className="h-4 w-4" />
               Connect Wallet
             </Button> */}
-            <appkit-button />
+            <appkit-button size="md" label="Connect" />
           </div>
         </header>
 

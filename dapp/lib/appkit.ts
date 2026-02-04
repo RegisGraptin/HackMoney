@@ -12,8 +12,8 @@ if (!projectId) {
 // Set up metadata
 const metadata = {
   name: 'Cipher Lend',
-  description: 'Cyber-noir privacy tooling for FHE-wrapped assets and lending.',
-  url: 'https://cipherlend.xyz', // Update with your domain
+  description: 'The confidential lending layer that lets users lend to Aave without exposing their positions on-chain.',
+  url: 'https://localhost:3000', // FIXME: Update with your domain
   icons: ['https://avatars.githubusercontent.com/u/179229932']
 }
 
@@ -27,6 +27,6 @@ export const modal = createAppKit({
   features: {
     analytics: true,
     email: true,
-    socials: ['google', 'x', 'github', 'discord', 'apple'],
+    socials: ['google', 'x', 'github'],
   }
 })
