@@ -227,6 +227,8 @@ contract ConfidentialLending is
         // Decrypt the round amount
         uint64 roundAmount = abi.decode(abiEncodedClearValues, (uint64));
 
+        // FIXME: We need to check that this signature match the last round and not another one
+
         // Compute and assigned all the rewards
         uint256 newReward = IERC20(aAsset).balanceOf(address(this)) - totalLendedAmount;
         uint256 deltaIndex = totalLendedAmount > 0 ? (newReward * PRECISION_FACTOR) / totalLendedAmount : 0;
