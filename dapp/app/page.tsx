@@ -8,6 +8,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Shielding } from "@/components/sections/Shielding";
 import { LendingDeck } from "@/components/sections/LendingDeck";
 import { ProtocolStatus } from "@/components/sections/ProtocolStatus";
+import { ConfidentialSwap } from "@/components/sections/ConfidentialSwap";
 import { ConnectButton } from "@/components/wallet/ConnectButton";
 
 export default function Home() {
@@ -38,6 +39,7 @@ export default function Home() {
           <TabsList>
             <TabsTrigger value="shield">Shield Assets</TabsTrigger>
             <TabsTrigger value="lending">Lend</TabsTrigger>
+            <TabsTrigger value="swap">Swap</TabsTrigger>
             <TabsTrigger value="portfolio">Protocol Status</TabsTrigger>
           </TabsList>
         </Tabs>
@@ -66,6 +68,19 @@ export default function Home() {
               className=""
             >
               <LendingDeck />
+            </motion.div>
+          )}
+
+          {activeTab === "swap" && (
+            <motion.div
+              key="swap"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              transition={{ duration: 0.4 }}
+              className=""
+            >
+              <ConfidentialSwap />
             </motion.div>
           )}
 
