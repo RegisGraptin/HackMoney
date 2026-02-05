@@ -35,13 +35,19 @@ npx hardhat deploy --network sepolia
 npx hardhat deploy --tags USDCWrapper --network sepolia
 # Deploy ConfidentialLending (depends on USDCWrapper)
 npx hardhat deploy --tags ConfidentialLending --network sepolia
+# Deploy ConfidentialSwap
+npx hardhat deploy --tags ConfidentialSwap --network sepolia
 # Verify contract on Etherscan
 npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
 ```
 
 ## Deployed Contracts on Sepolia
 
+V1 - Deployments:
+
 - cUSDC: `0x022521db54b0BfC74d8F76a8838a63494DD00d01`
+- Confidential Lending: `0x4c6faABbDD81B1c8A8d6204BA3A511467e081205`
+- Confidential Swap: `0xcB409aBDc2377D8F9f45886e7CF1814f6a901C8d`
 
 ## 📜 Available Scripts
 

@@ -9,20 +9,17 @@ const func: DeployFunction = async function (hre: HardhatRuntimeEnvironment) {
   const UNIVERSAL_ROUTER_ADDRESS = process.env.UNI_UNIVERSAL_ROUTER_SEPOLIA;
   const POOL_MANAGER_ADDRESS = process.env.UNI_POOL_MANAGER_SEPOLIA;
   const PERMIT2_ADDRESS = process.env.PERMIT2_SEPOLIA;
+  const QUOTER_ADDRESS = process.env.UNI_QUOTER_SEPOLIA;
 
-  if (!UNIVERSAL_ROUTER_ADDRESS || !POOL_MANAGER_ADDRESS || !PERMIT2_ADDRESS) {
+  if (!UNIVERSAL_ROUTER_ADDRESS || !POOL_MANAGER_ADDRESS || !PERMIT2_ADDRESS || !QUOTER_ADDRESS) {
     throw new Error(
-      "Missing required environment variables: UNI_UNIVERSAL_ROUTER_SEPOLIA, UNI_POOL_MANAGER_SEPOLIA, or PERMIT2_SEPOLIA"
+      "Missing required environment variables: UNI_UNIVERSAL_ROUTER_SEPOLIA, UNI_POOL_MANAGER_SEPOLIA, PERMIT2_SEPOLIA, or UNI_QUOTER_SEPOLIA",
     );
   }
 
-  // Get the deployed USDC Wrapper address (ERC7984Mock)
-  const usdcWrapper = await hre.deployments.get("ERC7984Mock");
-  const WRAPPER_ADDRESS = usdcWrapper.address;
-
   const deployedConfidentialSwap = await deploy("ConfidentialSwap", {
     from: deployer,
-    args: [WRAPPER_ADDRESS, UNIVERSAL_ROUTER_ADDRESS, POOL_MANAGER_ADDRESS, PERMIT2_ADDRESS],
+    args: [UNIVERSAL_ROUTER_ADDRESS, POOL_MANAGER_ADDRESS, PERMIT2_ADDRESS, QUOTER_ADDRESS],
     log: true,
   });
 
