@@ -1,19 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Address, erc20Abi, formatUnits } from "viem";
+import { Address, erc20Abi, formatUnits, encodeAbiParameters, parseAbiParameters } from "viem";
 import { usePublicClient, useReadContract, useReadContracts, useWriteContract } from "wagmi";
+import { useFHEPublicDecrypt } from "@/lib/fhevm-sdk/react";
+import { useConnectedFhevm } from "@/lib/utils/fhevm";
 
 import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { PROTOCOL } from "@/lib/protocol";
 import { formatAmount } from "@/lib/utils";
@@ -23,6 +23,9 @@ import { useBalance } from "@/lib/hooks/useTokenBalance";
 export function ProtocolStatus() {
   const publicClient = usePublicClient();
   const { mutateAsync } = useWriteContract();
+  
+  // FHE public decryption setup
+  const { instance: fhevm } = useConnectedFhevm();
 
   // ===== Protocol status reads =====
   const { data: currentRound } = useReadContract({
@@ -54,6 +57,14 @@ export function ProtocolStatus() {
     abi: PROTOCOL.abi.ConfidentialLending,
     functionName: "MIN_DISTINCT_USERS",
   });
+
+  // Read nextRoundDelta (encrypted handle)
+  const { data: nextRoundDeltaHandle } = useReadContract({
+    address: PROTOCOL.address.ConfidentialLending,
+    abi: PROTOCOL.abi.ConfidentialLending,
+    functionName: "nextRoundDelta",
+  });
+
 
   const [nowTs, setNowTs] = useState<number>(Math.floor(Date.now() / 1000));
   useEffect(() => {
@@ -99,7 +110,22 @@ export function ProtocolStatus() {
 
   const onExecuteRound = async () => {
     try {
-      // Disabled for now (requires gateway inputs)
+      
+      const results = await fhevm?.publicDecrypt([nextRoundDeltaHandle as `0x${string}`])
+      console.log("Decryption results for nextRoundDelta:", results);
+
+      if (!results) {
+        console.error("No decryption results available");
+        return;
+      }
+
+      const txHash = await mutateAsync({
+        address: PROTOCOL.address.ConfidentialLending,
+        abi: PROTOCOL.abi.ConfidentialLending,
+        functionName: "executeRound",
+        args: [results.abiEncodedClearValues, results.decryptionProof],
+      });
+      await publicClient!.waitForTransactionReceipt({ hash: txHash });
     } catch (e) {
       console.error("executeRound failed:", e);
     }
@@ -169,7 +195,9 @@ export function ProtocolStatus() {
 
           <div className="flex items-center gap-3">
             <Button onClick={onCallNextRound} disabled={!canCallNextRound}>Call Next Round</Button>
-            <Button variant="outline" onClick={onExecuteRound} disabled={true}>Execute Round</Button>
+            <Button variant="outline" onClick={onExecuteRound} >
+              Execute Round
+            </Button>
           </div>
 
           <div className="mt-2">
