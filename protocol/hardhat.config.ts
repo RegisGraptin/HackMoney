@@ -13,6 +13,7 @@ import "dotenv/config";
 // Load Hardhat tasks
 import "./tasks/fund";
 import "./tasks/lending";
+import "./tasks/swap";
 
 const config: HardhatUserConfig = {
   defaultNetwork: "hardhat",

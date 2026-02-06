@@ -42,9 +42,9 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
     IV4Quoter public immutable quoter;
 
     uint256 public constant MIN_TIME_BETWEEN_ROUNDS = 2 minutes;
-    uint256 public constant MIN_DISTINCT_USERS = 2;
+    uint256 public constant MIN_DISTINCT_USERS = 1;
 
-    uint256 currentRound;
+    uint256 public currentRound;
 
     euint64 public nextRoundDelta;
 
@@ -61,6 +61,7 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
 
     /// @notice Track per round the encrypted liquidity delta
     mapping(uint256 round => euint64 roundDelta) public roundDelta;
+    mapping(uint256 round => bool) public executed;
 
     // Save the transfer values
     mapping(uint256 round => uint64 amount) public totalRequestedAmount;
@@ -98,6 +99,10 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
         poolManager = IPoolManager(poolManager_);
         permit2 = IPermit2(permit2_);
         quoter = IV4Quoter(quoter_);
+
+        // Initialize the round tracking
+        currentRound = 1;
+        lastUpdateTime = block.timestamp;
     }
 
     /**
@@ -124,7 +129,15 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
         FHE.makePubliclyDecryptable(nextRoundDelta);
         roundDelta[currentRound] = nextRoundDelta;
 
+        // Unshield the current token 
+        FHE.allowTransient(nextRoundDelta, cUSDC);
+        ERC7984ERC20Wrapper(cUSDC).unwrap(address(this), address(this), nextRoundDelta);
+
         currentRound++;
+
+        // Reset the threshold for the next round
+        currentNumberOfUsers = 0;
+        lastUpdateTime = block.timestamp;
 
         emit RoundUpdated(currentRound, nextRoundDelta);
     }
@@ -141,12 +154,23 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
         cts[0] = FHE.toBytes32(roundDelta[currentRound - 1]);
         FHE.checkSignatures(cts, abiEncodedClearValues, decryptionProof);
 
+        require(!executed[currentRound - 1], 'Already executed');
+        executed[currentRound - 1] = true;
+
         // Decrypt the round amount and save it
         uint64 swapUsdcAmount = abi.decode(abiEncodedClearValues, (uint64));
 
+        // Determine swap direction: true if swapping currency0 for currency1
+        bool zeroForOne = USDC < UNI; // USDC is currency0, so swap USDC->UNI is zeroForOne=true
+
+        // Sort currencies: currency0 must be < currency1
+        (Currency currency0, Currency currency1) = zeroForOne 
+            ? (Currency.wrap(USDC), Currency.wrap(UNI))
+            : (Currency.wrap(UNI), Currency.wrap(USDC));
+        
         PoolKey memory key = PoolKey({
-            currency0: Currency.wrap(USDC),
-            currency1: Currency.wrap(UNI),
+            currency0: currency0,
+            currency1: currency1,
             fee: 3000, // 0.3% fee tier
             tickSpacing: 60, // Tick spacing for the pool
             hooks: IHooks(address(0)) // No hooks needed for this swap
@@ -154,16 +178,16 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
 
         IV4Quoter.QuoteExactSingleParams memory quoteParams = IV4Quoter.QuoteExactSingleParams({
             poolKey: key,
-            zeroForOne: true, // true if we're swapping token0 for token1
+            zeroForOne: zeroForOne,
             exactAmount: swapUsdcAmount,
-            hookData: bytes("")
+            hookData: bytes('')
         });
 
         (uint256 expectedAmountOut, uint256 gasEstimate) = quoter.quoteExactInputSingle(quoteParams);
         uint128 minAmountOut = uint128((expectedAmountOut * 99) / 100);
         // FIXME: Maybe add a check here on the output value
 
-        uint256 amountOut = _swapExactInputSingle(key, swapUsdcAmount, minAmountOut, block.timestamp + 15 minutes);
+        uint256 amountOut = _swapExactInputSingle(key, zeroForOne, swapUsdcAmount, minAmountOut, block.timestamp + 15 minutes);
 
         // Wrap the received UNI into the confidential wrapper
         // FIXME: Production use SafeERC20 and check return values
@@ -171,12 +195,14 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
         ERC7984ERC20Wrapper(cUNI).wrap(address(this), amountOut);
 
         // Save the round amounts transferred
+        // UNI has 18 decimals, convert to 6 decimals to match cUNI (6 decimals)
         totalRequestedAmount[currentRound - 1] = swapUsdcAmount;
-        totalReceivedAmount[currentRound - 1] = uint64(amountOut);
+        totalReceivedAmount[currentRound - 1] = uint64(amountOut / 1e12);
     }
 
     function _swapExactInputSingle(
         PoolKey memory key, // PoolKey struct that identifies the v4 pool
+        bool zeroForOne, // Swap direction
         uint128 amountIn, // Exact amount of tokens to swap
         uint128 minAmountOut, // Minimum amount of output tokens expected
         uint256 deadline // Timestamp after which the transaction will revert
@@ -192,28 +218,42 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
             uint8(Actions.TAKE_ALL)
         );
 
+        // Determine input/output currencies based on swap direction
+        Currency inputCurrency = zeroForOne ? key.currency0 : key.currency1;
+        Currency outputCurrency = zeroForOne ? key.currency1 : key.currency0;
+
         // First parameter: swap configuration
         params[0] = abi.encode(
             IV4Router.ExactInputSingleParams({
                 poolKey: key,
-                zeroForOne: true, // true if we're swapping token0 for token1  // FIXME:
+                zeroForOne: zeroForOne,
                 amountIn: amountIn, // amount of tokens we're swapping
                 amountOutMinimum: minAmountOut, // minimum amount we expect to receive
-                hookData: bytes("") // no hook data needed
+                hookData: bytes('') // no hook data needed
             })
         );
-        params[1] = abi.encode(key.currency0, amountIn);
-        params[2] = abi.encode(key.currency1, minAmountOut);
+        params[1] = abi.encode(inputCurrency, amountIn);
+        params[2] = abi.encode(outputCurrency, minAmountOut);
 
         // Combine actions and params into inputs
         inputs[0] = abi.encode(actions, params);
 
         // Execute the swap with deadline protection
+        // First approve Permit2 to spend USDC
+        IERC20(USDC).approve(address(permit2), type(uint256).max);
+        
+        // Then use Permit2 to approve the router with expiration
+        permit2.approve(USDC, address(router), uint160(amountIn), uint48(deadline));
+        
         router.execute(commands, inputs, deadline);
 
-        // Verify the swap amount
-        amountOut = IERC20(Currency.unwrap(key.currency1)).balanceOf(address(this));
-        require(amountOut >= minAmountOut, "Insufficient output amount");
+        // // Verify the swap amount
+        amountOut = IERC20(
+            zeroForOne ? 
+            Currency.unwrap(key.currency1) :
+            Currency.unwrap(key.currency0)
+        ).balanceOf(address(this));
+        require(amountOut >= minAmountOut, "Insufficient output amount"); 
 
         return amountOut;
     }
@@ -253,16 +293,17 @@ contract ConfidentialSwap is ZamaEthereumConfig, IERC7984Receiver {
 
     function withdraw(uint256 roundId) external {
         require(roundId < currentRound, "Invalid round ID");
+        require(executed[roundId], "Round not executed yet");
         euint64 eInputAmount = userAmounts[roundId][msg.sender];
         require(FHE.isInitialized(eInputAmount), "Invalid user amount");
 
-        // Reset the suer balance
+        // Reset the user balance
         userAmounts[roundId][msg.sender] = euint64.wrap(0);
 
-        // Compute the user share
+        // Compute the user share: (userInput * totalOutput) / totalInput
         euint64 eUserAmount = FHE.div(
-            eInputAmount,
-            totalRequestedAmount[currentRound - 1] * totalReceivedAmount[currentRound - 1]
+            FHE.mul(eInputAmount, totalReceivedAmount[roundId]),
+            totalRequestedAmount[roundId]
         );
 
         // Transfer the share of the user

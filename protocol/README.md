@@ -39,8 +39,9 @@ npx hardhat deploy --tags ConfidentialLending --network sepolia
 npx hardhat deploy --tags ConfidentialSwap --network sepolia
 # Verify contract on Etherscan
 npx hardhat verify --network sepolia <CONTRACT_ADDRESS>
-npx hardhat verify --network sepolia 0xcB409aBDc2377D8F9f45886e7CF1814f6a901C8d 0x3A9D48AB9751398BbFa63ad67599Bb04e4BdF98b 0xE03A1074c86CFeDd5C142C4F04F1a1536e203543 0x000000000022D473030F116dDEE9F6B43aC78BA3 0x61b3f2011a92d183c7dbadbda940a7555ccf9227
 ```
+
+npx hardhat task:executeRound --network sepolia --swapaddress 0x37Fa70233C92f903E13017D05483402323BC034F
 
 ## Deployed Contracts on Sepolia
 

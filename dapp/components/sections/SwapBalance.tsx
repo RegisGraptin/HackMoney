@@ -110,7 +110,16 @@ export function SwapBalance() {
       <CardHeader>
         <CardTitle>Balances</CardTitle>
         <CardDescription>
-          Public USDC vs encrypted cUSDC inside privacy vaults.
+          Public and encrypted balances for Uniswap positions. Encrypted balances require decryption via FHEVM.
+          <br />
+          <a 
+            href="https://faucet.circle.com/" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="text-[#00FF94] hover:underline"
+          >
+            Test the Dapp using testnet USDC from Circle Faucet →
+          </a>
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -120,7 +129,7 @@ export function SwapBalance() {
 
         <EncryptedBalance tokenName="cUSDC" decryptedValue={cUsdcBig} />
 
-        <EncryptedBalance tokenName="cUNI" decryptedValue={cUniBig} />
+        <EncryptedBalance tokenName="cUNI" decryptedValue={cUniBig} displayDecimals={6} />
 
       </CardContent>
       <CardFooter className="flex items-center justify-end gap-4">

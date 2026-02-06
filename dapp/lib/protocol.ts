@@ -1,6 +1,7 @@
 import { CHAIN, contracts } from "./contracts";
 import cUSDC from "./abis/ERC7984Mock.json" assert { type: "json" };
 import ConfidentialLending from "./abis/ConfidentialLending.json" assert { type: "json" };
+import ConfidentialSwap from "./abis/ConfidentialSwap.json" assert { type: "json" };
 
 export const PROTOCOL = {
   chainId: CHAIN.sepolia,
@@ -18,8 +19,9 @@ export const PROTOCOL = {
     UniswapCUni: contracts.Uniswap.cUNI[CHAIN.sepolia] as `0x${string}`,
 
     // Protocol
-    ConfidentialLending: contracts.ConfidentialLending[CHAIN.sepolia] as `0x${string}`,
     ConfidentialSwap: contracts.ConfidentialSwap[CHAIN.sepolia] as `0x${string}`,
+    
+    ConfidentialLending: contracts.ConfidentialLending[CHAIN.sepolia] as `0x${string}`,
     AAVEPool: contracts.AAVEPool[CHAIN.sepolia] as `0x${string}`,
 
     UNISWAP_QUOTER: {
@@ -29,6 +31,7 @@ export const PROTOCOL = {
   abi: {
     cToken: cUSDC.abi,
     ConfidentialLending: ConfidentialLending.abi,
+    ConfidentialSwap: ConfidentialSwap.abi,
   },
   decimals: {
     USDC: 6,

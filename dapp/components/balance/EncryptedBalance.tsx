@@ -9,12 +9,14 @@ const PLACEHOLDER = "✶✶✶✶✶✶✶✶";
 export function EncryptedBalance({
   tokenName,
   decryptedValue,
+  displayDecimals = 2,
 }: {
   tokenName: string;
   decryptedValue?: bigint;
+  decimals?: number;
+  displayDecimals?: number;
 }) {
 
-  console.log("Rendering EncryptedBalance", { tokenName, decryptedValue });
   return (
     <>
       <div className="relative rounded-2xl border border-white/10 bg-black/40 p-4">
@@ -33,7 +35,10 @@ export function EncryptedBalance({
               transition={{ duration: 0.4 }}
             >
               {decryptedValue !== undefined
-                ? formatAmount(formatUnits(decryptedValue, DECIMALS))
+                ? formatAmount(formatUnits(decryptedValue, DECIMALS), {
+                    minimumFractionDigits: displayDecimals,
+                    maximumFractionDigits: displayDecimals,
+                  })
                 : PLACEHOLDER}
             </motion.p>
             {!decryptedValue && (
