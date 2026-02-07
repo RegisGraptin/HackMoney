@@ -13,8 +13,6 @@
     <a href="https://github.com/RegisGraptin/CipherLend">Code</a>
     &middot;
     <a href="https://cipher-lend-five.vercel.app/">Website</a>
-    &middot;
-    <a href="#">Video Demo</a>
   </p>
 </div>
 
