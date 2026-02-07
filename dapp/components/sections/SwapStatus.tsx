@@ -290,7 +290,7 @@ export function SwapStatus() {
                 <div className="flex items-center justify-between rounded-xl border border-white/10 bg-black/30 px-4 py-3">
                   <div>
                     <p className="font-medium text-white">2. Unshield cUSDC</p>
-                    <p className="text-xs text-zinc-500">Unwrap cUSDC to USDC for the swap execution</p>
+                    <p className="text-xs text-zinc-500">Unshield cUSDC to USDC for the swap execution</p>
                   </div>
                   <Button
                     size="sm"

@@ -59,11 +59,6 @@ export function EncryptedBalance({
           </div>
           <Badge>{tokenName}</Badge>
         </div>
-        <div className="mt-2 flex items-center justify-between">
-          <p className="text-xs text-zinc-500">
-            {decryptedValue ? "Decrypted" : "Encrypted • Privacy Mask Active"}
-          </p>
-        </div>
       </div>
     </>
   );

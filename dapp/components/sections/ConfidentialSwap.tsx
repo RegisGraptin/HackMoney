@@ -213,7 +213,7 @@ export function ConfidentialSwap() {
               </p>
               <div className="mt-3 space-y-2">
                 {[
-                  { key: "swapping", label: "Execute Swap" },
+                  { key: "swapping", label: "Execute Confidential Swap" },
                 ].map((step) => {
                   const currentOrder = { idle: -1, swapping: 1, done: 2 } as const;
                   const statusOrder = currentOrder[swapStage];

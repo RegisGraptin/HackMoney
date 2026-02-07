@@ -110,7 +110,7 @@ export function SwapBalance() {
       <CardHeader>
         <CardTitle>Balances</CardTitle>
         <CardDescription>
-          Public and encrypted balances for Uniswap positions. Encrypted balances require decryption via FHEVM.
+          Your on-chain balances, public and encrypted
           <br />
           <a 
             href="https://faucet.circle.com/" 
@@ -118,7 +118,7 @@ export function SwapBalance() {
             rel="noopener noreferrer"
             className="text-[#00FF94] hover:underline"
           >
-            Test the Dapp using testnet USDC from Circle Faucet →
+            Need testnet USDC from Circle Faucet →
           </a>
         </CardDescription>
       </CardHeader>

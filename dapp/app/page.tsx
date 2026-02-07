@@ -29,7 +29,7 @@ export default function Home() {
               <p className="text-sm uppercase tracking-[0.35em] text-zinc-500">
                 Cipher Lend
               </p>
-              <h1 className="text-2xl font-semibold">Confidential DeFi Lending</h1>
+              <h1 className="text-2xl font-semibold">Confidential DeFi Layer</h1>
             </div>
           </div>
           <div className="flex items-center gap-3">
