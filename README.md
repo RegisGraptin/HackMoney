@@ -22,23 +22,34 @@
 
 Cipher Lend brings privacy to DeFi by enabling confidential swaps and lending **without exposing your position on-chain**.
 
-Normally, each DeFi action such as swap, liquidity deposit or withdrawal publicly reveals who acted, how much, and when. Cipher Lend breaks this link by batching many users’ encrypted intents and executing them as a single aggregated transaction, making individual activity indistinguishable.
+Normally, each DeFi action such as swaps, liquidity deposits, or withdrawals publicly reveals who acted, how much, and when. Cipher Lend breaks this link by batching many users’ encrypted intents and executing them as a single aggregated transaction, making individual activity indistinguishable.
 
 Cipher Lend operates using a round-based execution model. During each round, users submit encrypted intents to **swap, lend, or withdraw**. Once a predefined time window closes and a participation threshold is reached, the protocol executes a single aggregated transaction across supported protocols that applies only the net amounts. Because only aggregate values are visible on-chain, individual positions and amounts remain private.
 
 Cipher Lend does not reinvent DeFi infrastructure. Instead, it provides the privacy primitives required to interact with battle-tested DeFi protocols while leveraging Fully Homomorphic Encryption (FHE) for confidential computation.
 
-Welcome to the privacy land.
+Welcome to privacy land.
 
-### Current Demo: Confidential Swaps
 
-For the HackMoney demo, we showcase private swaps using the same round-based aggregation and encrypted intent model. This demonstrates the privacy primitives that will extend seamlessly to lending.
+## How It Works
 
-To interact with the demo, you can either run the `dapp` locally or use the deployed Vercel app. You will need to have USDC faucet on Sepolia. Then you will need to shield them to get confidential USDC (cUSDC) that you can use to submit your swap intent. At the moment, we only handle swaps from cUSDC to cUNI, but this design can be modified and adapted to handle the other direction. Once your intent is submitted by providing cUSDC, you can execute the round logic in the "Swap Status". (Note: If you need more users, you can take a look at the tasks in the `protocol` folder) To execute the round, you will need to wait for the round to close (after the predefined time window) and for the participation threshold to be reached (enough swap intents submitted). Here we have set it pretty low for easier testing. Once these conditions are met, you can execute the round logic, which will perform a single aggregated swap transaction on Uniswap using the net amounts from all submitted intents. For this swap, we will need to unshield the total amount of cUSDC submitted by all users to get the underlying USDC, perform the swap on Uniswap, and then shield the resulting UNI back to cUNI. Finally, once the round is executed, you can withdraw your share of cUNI swapped.
+The current implementation focuses on confidential swaps, but the same primitives extend to lending. Cipher Lend leverages confidential tokens using FHE (Fully Homomorphic Encryption) to encrypt user balances. This primitive is now available on Ethereum mainnet and allows confidential transfers, where transactions are visible on Etherscan but the transferred amounts are encrypted.
+
+Cipher Lend has a round-based execution model where users submit encrypted intents to swap. Currently, we only support cUSDC to cUNI. Once the round closes (after a predefined time window) and a participation threshold is reached, the protocol executes a single aggregated transaction that swaps USDC to the UNI token. Because we are using confidential tokens, we first need to unshield cUSDC to get the native token and use Uniswap v4 to perform the swap. Notice that because we batch into a single transaction, individual user amounts cannot be deduced. 
+
+Finally, once the swap is executed, we will shield the resulting UNI back to cUNI and distribute it to users based on their share of the total cUSDC submitted. This way, we can execute swaps using confidential primitives, allowing us to preserve user privacy while still interacting with existing DeFi protocols.
+
+The smart contracts are deployed on Sepolia, and we use the Zama FHE SDK for the confidential token implementation. You can check the implementation details in the `protocol` folder. 
+
+Client-side, the dapp is built with Next.js and uses Wagmi/AppKit for wallet connection. For encryption and decryption, we use the Zama Relayer SDK.
+
+While the demo centers on swaps, the same primitives extend to aggregated lending. We have started the implementation for Aave, where users can submit encrypted intents to supply or withdraw, and then execute a single aggregated transaction that interacts with Aave on behalf of all users, keeping individual positions hidden while preserving composability. However, the lending part is still a work in progress.
+
+To test the swap demo, you can use the deployed contracts on Sepolia by running a frontend instance. Alternatively, you can use the one deployed on Vercel.
 
 ### Roadmap: Confidential Lending
 
-This round-based aggregation and encrypted intent model extends naturally to lending. We can have the same logic applied for AAVE where people aggregate their intends to supply or withdraw, and then execute a single aggregated transaction that interacts with AAVE on behalf of all users, keeping individual positions hidden while preserving composability.
+This round-based aggregation and encrypted intent model extends naturally to lending. We can apply the same logic to Aave, where people aggregate their intents to supply or withdraw, and then execute a single aggregated transaction that interacts with Aave on behalf of all users, keeping individual positions hidden while preserving composability.
 
 ## Getting Started
 
