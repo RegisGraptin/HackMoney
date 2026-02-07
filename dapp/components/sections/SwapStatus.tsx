@@ -122,7 +122,7 @@ export function SwapStatus() {
         if (a.blockNumber !== b.blockNumber) {
           return Number(b.blockNumber - a.blockNumber); // Most recent block first
         }
-        return Number((b.logIndex || 0n) - (a.logIndex || 0n)); // Most recent log in block first
+        return Number(BigInt(b.logIndex || BigInt(0)) - BigInt(a.logIndex || BigInt(0))); // Most recent log in block first
       });
       
       const mostRecentLog = sortedLogs[0];
@@ -227,7 +227,7 @@ export function SwapStatus() {
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="border-[#00FF94]/30 text-[#00FF94]">
+              <Badge className="border-[#00FF94]/30 text-[#00FF94]">
                 Round {currentRound ? Number(currentRound) : 0}
               </Badge>
             </div>

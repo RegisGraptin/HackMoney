@@ -143,7 +143,7 @@ export function ConfidentialSwap() {
                   </CardDescription>
                 </div>
               </div>
-              <Badge variant="outline" className="border-[#00FF94]/30 text-[#00FF94]">
+              <Badge className="border-[#00FF94]/30 text-[#00FF94]">
                 Private
               </Badge>
             </div>
@@ -194,7 +194,7 @@ export function ConfidentialSwap() {
                   <div className="flex items-center gap-2">
                     <span className="text-2xl font-mono text-[#FF6B00]">
                       {quoteAmountOut && outputDecimals
-                        ? formatAmount(formatUnits(quoteAmountOut / (10n ** BigInt(outputDecimals - 6)), 6), {
+                        ? formatAmount(formatUnits(quoteAmountOut / (BigInt(10) ** BigInt(outputDecimals - 6)), 6), {
                           maximumFractionDigits: 6,
                           minimumFractionDigits: 6,
                         })
